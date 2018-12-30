@@ -1,0 +1,25 @@
+//StudentController.java
+	@CrossOrigin(origins = "*")
+	@GetMapping(value = "/{id}/events", produces=MediaType.TEXT_EVENT_STREAM_VALUE)
+	public Flux<StudentEvent> getEvents(@PathVariable("id") int id){
+		return studentRepository.findById(id)
+			.flatMapMany(student -> {
+				
+				Flux<Long> interval = Flux.interval(Duration.ofSeconds(2));
+				Flux<StudentEvent> studentEventFlux = 
+						Flux.fromStream(
+								Stream.generate(() -> new StudentEvent(student, 
+										new Date()))
+						);
+				
+				return Flux.zip(interval, studentEventFlux)
+					.map(objects -> {
+						return objects.getT2();
+					});
+				/*return Flux.fromStream(
+						Stream.generate(() -> new StudentEvent(student, 
+								new Date()))
+				);*/
+			});
+	}
+	
